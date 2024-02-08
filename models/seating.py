@@ -1,21 +1,26 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 from sqlite3 import Cursor, Connection
 
-from helper import validate_types, table_exists
+from facades.bill_only import get_all_bills_by_seat
+from helper import validate_types
+from models.base import RowBase, TableBase
 
 
-class Seat:
+class Seat(RowBase):
+    """
+    Seat class for the Seating table in the database
+    """
+
     def __init__(self, sid: int, cur: Cursor, db: Connection) -> None:
-        self.cur = cur
-        self.db = db
-        self._id = sid
-        attributes = ['name', 'max_size', 'flagged', 'status', 'type', 'created_at', 'updated_at']
-        query = f"SELECT {', '.join(attributes)} FROM seating WHERE id = {self._id}"
-        (self._name, self._max_size, self._flagged, self._status, self._type, self._created_at,
-         self._updated_at) = self.cur.execute(query).fetchone()
+        self._bills = []
+
+        # Get all the attributes of the Seat
+        attributes = ['name', 'max_size', 'flagged', 'status', 'type']
+
+        super().__init__(sid, cur, db, 'seating', attributes)
 
     @property
-    def id(self) -> int:
+    def sid(self) -> int:
         """
         Get the id of the Seat
 
@@ -51,10 +56,7 @@ class Seat:
         if len(new_name) < 1 or len(new_name) > 25:
             raise ValueError('new_name must be between 1 and 25 characters long')
 
-        # Update the database
-        self.cur.execute(f"UPDATE seating SET name = '{new_name}' WHERE id = {self._id}")
-        self.db.commit()
-        self._name = new_name
+        self.set_attribute('name', new_name)
 
     @property
     def max_size(self) -> int:
@@ -76,18 +78,11 @@ class Seat:
         # Validate types
         validate_types([(new_max_size, int, 'new_max_size')])
 
-        # If new_max_size is the same as the current max_size, return
-        if new_max_size == self._max_size:
-            return
-
         # If new_max_size is less than 1, raise ValueError
         if new_max_size < 0:
             raise ValueError('new_max_size must be greater than 0')
 
-        # Update the database
-        self.cur.execute(f"UPDATE seating SET max_size = {new_max_size} WHERE id = {self._id}")
-        self.db.commit()
-        self._max_size = new_max_size
+        self.set_attribute('max_size', new_max_size)
 
     @property
     def flagged(self) -> bool:
@@ -109,14 +104,7 @@ class Seat:
         # Validate types
         validate_types([(new_flagged, bool, 'new_flagged')])
 
-        # If new_flagged is the same as the current flagged, return
-        if new_flagged == self._flagged:
-            return
-
-        # Update the database
-        self.cur.execute(f"UPDATE seating SET flagged = {new_flagged} WHERE id = {self._id}")
-        self.db.commit()
-        self._flagged = new_flagged
+        self.set_attribute('flagged', new_flagged)
 
     @property
     def status(self) -> str:
@@ -140,14 +128,7 @@ class Seat:
         if new_status not in ['clear', 'reserved', 'okay', 'mains', 'desserts', 'bill', 'paid', 'check']:
             raise ValueError('new_status must be one of clear, reserved, okay, mains, desserts, bill, paid, check')
 
-        # If new_status is the same as the current status, return
-        if new_status == self._status:
-            return
-
-        # Update the database
-        self.cur.execute(f"UPDATE seating SET status = '{new_status}' WHERE id = {self._id}")
-        self.db.commit()
-        self._status = new_status
+        self.set_attribute('status', new_status)
 
     @property
     def type(self) -> str:
@@ -171,59 +152,7 @@ class Seat:
         if new_type not in ['table', 'booth', 'bar', 'high-table']:
             raise ValueError('new_type must be one of table, booth, bar, high-table')
 
-        # If new_type is the same as the current type, return
-        if new_type == self._type:
-            return
-
-        # Update the database
-        self.cur.execute(f"UPDATE seating SET type = '{new_type}' WHERE id = {self._id}")
-        self.db.commit()
-        self._type = new_type
-
-    @property
-    def created_at(self) -> datetime:
-        """
-        Get the created_at of the Seat
-
-        :return str : created_at of the Seat
-        """
-        return datetime.strptime(self._created_at, '%Y-%m-%d %H:%M:%S')
-
-    @property
-    def updated_at(self) -> datetime:
-        """
-        Get the updated_at of the Seat
-
-        :return str : updated_at of the Seat
-        """
-        return datetime.strptime(self._created_at, '%Y-%m-%d %H:%M:%S')
-
-    @updated_at.setter
-    def updated_at(self, new_updated_at: datetime) -> None:
-        """
-        Set the updated_at of the Seat
-        :param new_updated_at:
-        :return:
-        """
-        # Validate types
-        validate_types([(new_updated_at, datetime, 'new_updated_at')])
-
-        # If new_updated_at is in the future, raise ValueError
-        if new_updated_at > datetime.now():
-            raise ValueError('new_updated_at cannot be in the future')
-
-        # If new_updated_at is over one day in the past, raise ValueError
-        if new_updated_at < datetime.now() - timedelta(days=1):
-            raise ValueError('new_updated_at cannot be over one day in the past')
-
-        # If new_updated_at is the same as the current updated_at, return
-        if new_updated_at == self._updated_at:
-            return
-
-        # Update the database
-        self.cur.execute(f"UPDATE seating SET updated_at = '{new_updated_at}' WHERE id = {self._id}")
-        self.db.commit()
-        self._updated_at = new_updated_at
+        self.set_attribute('type', new_type)
 
     @property
     def bills(self) -> list:
@@ -232,7 +161,7 @@ class Seat:
 
         :return list : bills of the Seat
         """
-        return self.cur.execute(f"SELECT id FROM bill WHERE table_id = {self._id}").fetchall()
+        return get_all_bills_by_seat(self.sid, self.cur, self.db)
 
     @bills.getter
     def bills(self) -> list:
@@ -241,7 +170,8 @@ class Seat:
 
         :return list : bills of the Seat
         """
-        return self.cur.execute(f"SELECT id FROM bill WHERE table_id = {self._id}").fetchall()
+        self._bills = get_all_bills_by_seat(self.sid, self.cur, self.db)
+        return self._bills
 
     @property
     def current_occupancy(self):
@@ -252,7 +182,15 @@ class Seat:
         """
         return self.cur.execute(f"SELECT COUNT(covers) FROM bill WHERE table_id = {self._id}").fetchone()[0]
 
-    @property
+    @current_occupancy.getter
+    def current_occupancy(self):
+        """
+        Get the current occupancy of the Seat
+
+        :return int : current occupancy of the Seat
+        """
+        return self.cur.execute(f"SELECT COUNT(covers) FROM bill WHERE table_id = {self._id}").fetchone()[0]
+
     def is_full(self):
         """
         Get the is_full of the Seat
@@ -260,6 +198,9 @@ class Seat:
         :return bool : is_full of the Seat
         """
         return self.current_occupancy >= self._max_size
+
+    def add_bill(self, bill):
+        pass
 
     def __repr__(self):
         return f'<Seat id={self._id}, name="{self._name}", max_size={self._max_size}, flagged={self._flagged}, ' \
@@ -279,7 +220,7 @@ class Seat:
         )
 
 
-class Seating:
+class Seats(TableBase):
     def __create_table(self):
         # Create the table
         self.cur.execute('''
@@ -297,62 +238,7 @@ class Seating:
         ''')
 
     def __init__(self, cur: Cursor, db: Connection):
-
-        # Validate types of cur and db
-        validate_types([(cur, Cursor, 'cur'), (db, Connection, 'db')])
-
-        # Check the cursor is connected to the database
-        if not cur.connection:
-            raise ConnectionError('Cursor is not connected to the database')
-
-        # Set the cursor and database
-        self.cur = cur
-        self.db = db
-
-        # Check if the table exists
-        if not table_exists('seating'):
-            self.__create_table()
-
-        self._seats = [Seat(x[0]) for x in self.cur.execute('SELECT id FROM seating').fetchall()]
-
-    @property
-    def seats(self) -> list[Seat]:
-        """
-        Get a list of Seats from the database
-
-        :return list[Seat] : list of Seats from the database
-        """
-        return self._seats
-
-    @seats.getter
-    def seats(self) -> list[Seat]:
-        """
-        Get a list of Seats from the database
-
-        :return list[Seat] : list of Seats from the database
-        """
-        return [Seat(x[0]) for x in self.cur.execute('SELECT id FROM seating').fetchall()]
-
-    @seats.setter
-    def seats(self, new_seats: list[Seat]) -> None:
-        """
-        Set the list of Seats in the database
-
-        :param new_seats: list[Seat] New list of Seats
-        :return None:
-        """
-        self._seats = new_seats
-
-    def get(self, **kwargs) -> list[Seat]:
-        """
-        Get a list of Seats from the database
-
-        :param kwargs: dict of attributes to search by
-        :return list[Seat] : list of Seats from the database
-        """
-
-        key, value = next(iter(kwargs.items()))
-        return [seat for seat in self.seats if getattr(seat, key) == value]
+        super().__init__(cur, db, 'seating', Seat, 'sid')
 
     def add(self, name: str, max_size: int, flagged: bool, status: str, seat_type: str) -> Seat:
         """
@@ -394,27 +280,7 @@ class Seating:
         # Create a new Seat object
         new_seat = Seat(new_id, self.cur, self.db)
 
-        # Add the new Seat to the list of Seats
-        self.seats.append(new_seat)
-
         return new_seat
-
-    def delete(self, sid: int):
-        """
-        Delete a Seat from the database
-        :return:
-        """
-        # Validate types
-        validate_types([(sid, int, 'sid')])
-
-        # If the seat does not exist, raise an error
-        if not self.cur.execute(f"SELECT * FROM seating WHERE id = {sid}").fetchone():
-            raise ValueError(f"Seat<{sid}> does not exist")
-
-        # Delete the Seat from the database
-        self.cur.execute(f"DELETE FROM seating WHERE id = {sid}")
-        self.db.commit()
-        self.seats = [seat for seat in self.seats if seat.id != sid]
 
     def __repr__(self):
         return '<Seating>'

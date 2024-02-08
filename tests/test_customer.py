@@ -43,7 +43,7 @@ class TestCustomer(unittest.TestCase):
         new_customer = self.customers.add(fake_name, fake_bool)
 
         # Assert that the new customer is in self.customers
-        self.assertIn(new_customer, self.customers.customers)
+        self.assertIn(new_customer, self.customers.rows)
 
         # Assert that the new customer is in the database
         self.cur.execute('SELECT * FROM customer WHERE id=?', (new_customer.cid,))
@@ -100,7 +100,7 @@ class TestCustomer(unittest.TestCase):
         self.customers.delete(new_customer.cid)
 
         # Assert that the new customer is not in self.customers
-        self.assertNotIn(new_customer, self.customers.customers)
+        self.assertNotIn(new_customer, self.customers.rows)
 
         # Assert that the new customer is not in the database
         self.cur.execute('SELECT * FROM customer WHERE id=?', (new_customer.cid,))
@@ -212,7 +212,7 @@ class TestCustomer(unittest.TestCase):
         new_customer = self.customers.add(fake_name, fake_bool)
 
         # Get all customers
-        all_customers = self.customers.customers
+        all_customers = self.customers.rows
 
         # Assert that the all_customers list contains the new customer
         self.assertIn(new_customer, all_customers)
@@ -284,17 +284,17 @@ class TestCustomer(unittest.TestCase):
             self.customers.add(fake_name, fake_bool)
 
         # Assert that customers were added
-        self.assertTrue(len(self.customers.customers) > 0)
+        self.assertTrue(len(self.customers.rows) > 0)
 
         # Clear customers
         self.customers.clear()
 
         # Assert that all customers were removed
-        self.assertEqual(len(self.customers.customers), 0)
+        self.assertEqual(len(self.customers.rows), 0)
 
     def __reset(self):
         # Clear customers
-        self.customers.customers.clear()
+        self.customers.rows.clear()
 
 
 if __name__ == '__main__':

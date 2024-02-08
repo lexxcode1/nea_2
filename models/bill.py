@@ -1,14 +1,15 @@
 from datetime import datetime
 from sqlite3 import OperationalError, Cursor, Connection
 
-from facades.get_customer import get_customer
+from facades.customer_only import get_customer
+from facades.seat_only import get_seat
 from helper import row_exists, table_exists, validate_types
+from models.base import RowBase, TableBase
 
 
-class Bill:
+class Bill(RowBase):
     """
     Bill class for rows in the Bills table
-    
     """
 
     def __init__(self, bid: int, cur: Cursor, db: Connection) -> None:
@@ -17,38 +18,17 @@ class Bill:
         
         Only for use in the Bills class
         """
-        # If cur or db is None, raise a TypeError
-        if cur is None or db is None:
-            raise TypeError(f'Cursor and database cannot be None')
-
         validate_types([(bid, int, 'bid'), (cur, Cursor, 'cur'), (db, Connection, 'db')])
-
-        # If cur is not connected to db, raise a ValueError
-        if cur.connection is not db:
-            raise ValueError(f'Cursor is not connected to database')
-
-        self.db = db
-        self.cur = cur
 
         # Initiate relationship variables
         self._customer = None
         self._seating = None
+        self._seating_id = None
         self._created_by_staff = None
 
-        if not row_exists('bill', bid):
-            raise ValueError(f'Bill<{bid}> does not exist')
+        attributes = ['customer_id', 'seating_id', 'total', 'covers', 'created_by_staff_id']
 
-        self._id = bid
-
-        attributes = ['customer_id', 'seating_id', 'total', 'covers', 'created_at', 'created_by_staff_id', 'updated_at']
-        query = f"SELECT {', '.join(attributes)} FROM bill WHERE id = {self._id}"
-        (self._customer_id,
-         self._seating_id,
-         self._total,
-         self._covers,
-         self._created_at,
-         self._created_by_staff_id,
-         self._updated_at) = self.cur.execute(query).fetchone()
+        super().__init__(bid, cur, db, 'bill', attributes)
 
     @property
     def bid(self) -> int:
@@ -58,41 +38,28 @@ class Bill:
         return self._id
 
     @property
-    def customer_id(self) -> int:
+    def customer_id(self) -> int | str:
         """
         Property initiation for the customer_id
         """
         return self._customer_id
 
     @customer_id.setter
-    def customer_id(self, new_cid: int | None) -> None:
+    def customer_id(self, new_cid: int | None | str) -> None:
         """
         Updates the customer_id of the Bill by ID
         """
-
         # If the customer_id is None, set it to NULL
-        if new_cid is None:
-            new_cid = 'NULL',
+        if new_cid is None or new_cid == 'NULL':
+            new_cid = 'NULL'
             self._customer_id = None
         else:
             validate_types([(new_cid, int, 'new_cid')])
+            # If the customer_id is not None, check if the customer exists
+            if not get_customer(cid=new_cid, cur=self.cur, db=self.db):
+                raise ValueError(f'Customer<{new_cid}> does not exist')
 
-        # If the customer_id is not None, check if the customer exists
-        if not get_customer(cid=new_cid, cur=self.cur, db=self.db):
-            raise ValueError(f'Customer<{new_cid}> does not exist')
-
-        # If new_cid is valid, update the customer_id
-        self.cur.execute(f"""
-            UPDATE bill
-            SET
-                customer_id = ?,
-                updated_at = ?
-            WHERE id = ?
-        """, (new_cid, datetime.now(), self.bid))
-        self.db.commit()
-
-        self._customer_id = new_cid
-        print(f'Bill<{self.bid}> customer_id updated')
+        self.set_attribute('customer_id', new_cid)
 
     @property
     def customer(self):
@@ -120,6 +87,7 @@ class Bill:
         """
         # If the new_customer is None, set customer_id to None
         self.customer_id = new_customer.id if new_customer is not None else None
+        self._customer = new_customer if new_customer is not None else None
 
     @property
     def seating_id(self) -> int:
@@ -136,28 +104,18 @@ class Bill:
         types_to_valid = []
 
         # If the new_tid is None, set it to NULL
-        if new_sid is None:
+        if new_sid is None or new_sid == 'NULL':
             new_sid = 'NULL'
             self._seating_id = None
-        else: types_to_valid.append((new_sid, int, 'new_sid'))
-
+        else:
+            types_to_valid.append((new_sid, int, 'new_sid'))
 
         # If new_tid is not None or int, raise a TypeError
         validate_types(types_to_valid)
 
         # TODO If new_tid is not an existing table, raise a ValueError
 
-        self.cur.execute(f"""
-            UPDATE bill 
-            SET 
-                seating_id = ?,
-                updated_at = ?
-            WHERE id = ?
-        """, (new_sid, datetime.now(), self.bid))
-        self.db.commit()
-
-        self._seating_id = new_sid if not None else None
-        print(f'Bill<{self.bid}> table_id updated')
+        self.set_attribute('seating_id', new_sid)
 
     @property
     def seating(self):
@@ -165,11 +123,25 @@ class Bill:
 
     @seating.getter
     def seating(self):
-        pass
+        try:
+            return get_seat(sid=self._seating_id, cur=self.cur, db=self.db)
+        except ValueError:
+            return None
 
     @seating.setter
-    def seating(self, new_tid):
-        pass
+    def seating(self, new_seat):
+        if new_seat is None:
+            self.seating_id = None
+            self._seating = None
+
+        # Try to get the seat, if it does not exist, set the seating_id to None
+        try:
+            get_seat(sid=new_seat.sid, cur=self.cur, db=self.db)
+            self.seating_id = new_seat.sid
+            self._seating = new_seat
+        except ValueError:
+            self.seating_id = None
+            self._seating = None
 
     @property
     def total(self) -> float:
@@ -189,18 +161,7 @@ class Bill:
         if new_total < 0:
             raise ValueError(f'Total must be positive, not {new_total}')
 
-        # If new_total is valid, update the total
-        self.cur.execute(f"""
-            UPDATE bill 
-            SET 
-                total = ?,
-                updated_at = ?
-            WHERE id = ?
-        """, (new_total, datetime.now(), self.bid))
-        self.db.commit()
-
-        self._total = new_total
-        print(f'Bill<{self.bid}> total updated')
+        self.set_attribute('total', new_total)
 
     @property
     def covers(self) -> int:
@@ -222,24 +183,7 @@ class Bill:
             raise ValueError(f'Covers must be between 0 and 999, not {new_covers}')
 
         # If new_covers is valid, update the covers
-        self.cur.execute(f"""
-            UPDATE bill 
-            SET 
-                covers = ?,
-                updated_at = ?
-            WHERE id = ?
-        """, (new_covers, datetime.now(), self.bid))
-        self.db.commit()
-
-        self._covers = new_covers
-        print(f'Bill<{self.bid}> covers updated')
-
-    @property
-    def created_at(self) -> datetime:
-        """
-        Property initiation for the created_at datetime
-        """
-        return datetime.strptime(self._created_at, '%Y-%m-%d %H:%M:%S')
+        self.set_attribute('covers', new_covers)
 
     @property
     def created_by_staff_id(self) -> int:
@@ -254,24 +198,18 @@ class Bill:
         Updates the created_by_staff_id of the Bill by ID
         """
         # If new_sid is not an int, raise a TypeError
-        validate_types([(new_sid, int, 'new_sid')])
+        if new_sid is None or new_sid == 'NULL':
+            new_sid = 'NULL'
+            self._created_by_staff_id = None
+        else:
+            validate_types([(new_sid, int, 'new_sid')])
 
         # TODO If new_sid is not an existing staff, raise a ValueError
         # if not row_exists('staff', new_sid):
         #     raise ValueError(f'Staff<{new_sid}> does not exist')
 
         # If new_sid is valid, update the created_by_staff_id
-        self.cur.execute(f"""
-            UPDATE bill 
-            SET 
-                created_by_staff_id = ?,
-                updated_at = ?
-            WHERE id = ?
-        """, (new_sid, datetime.now(), self.bid))
-        self.db.commit()
-
-        self._created_by_staff_id = new_sid
-        print(f'Bill<{self.bid}> created_by_staff_id updated')
+        self.set_attribute('created_by_staff_id', new_sid)
 
     @property
     def created_by_staff(self) -> None:  # | Staff
@@ -293,38 +231,6 @@ class Bill:
         Setter for the created_by_staff
         """
         pass
-
-    @property
-    def updated_at(self) -> datetime:
-        """
-        Property initiation for the updated_at datetime
-        """
-        return  datetime.strptime(self._created_at, '%Y-%m-%d %H:%M:%S')
-
-    @updated_at.setter
-    def updated_at(self, new_updated_at: datetime) -> None:
-        """
-        Updates the updated_at of the Bill by ID
-        """
-
-        # Validate types
-        validate_types([(new_updated_at, datetime, 'new_updated_at')])
-
-        # If new_updated_at is in the future, raise a ValueError
-        if new_updated_at > datetime.now():
-            raise ValueError(f'Updated at must be in the past, not {new_updated_at}')
-
-        # If new_updated_at is valid, update the updated_at
-        self.cur.execute(f"""
-            UPDATE bill 
-            SET 
-                updated_at = ?
-            WHERE id = ?
-        """, (new_updated_at, self.bid))
-        self.db.commit()
-
-        self._updated_at = new_updated_at
-        print(f'Bill<{self.bid}> updated_at updated')
 
     def __repr__(self) -> str:
         """
@@ -348,7 +254,7 @@ class Bill:
         )
 
 
-class Bills:
+class Bills(TableBase):
     """
     Bills class for the bills table
     """
@@ -357,55 +263,10 @@ class Bills:
         """
         Constructor for the Bills class
         """
-        # If cur or db is None, raise a TypeError
-        if cur is None or db is None:
-            raise TypeError(f'Cursor and database cannot be None')
 
-        validate_types([(cur, Cursor, 'cur'), (db, Connection, 'db')])
+        super().__init__(cur, db, 'bill', Bill, 'bid')
 
-        # If cur is not connected to db, raise a ValueError
-        if cur.connection is not db:
-            raise ValueError(f'Cursor is not connected to database')
-
-        # If cur & db are both valid, set them
-        self.cur = cur
-        self.db = db
-
-
-        # If the bills table does not exist, create it
-        if not table_exists('bills'):
-            self.__create_table()
-
-        # If the bills table is empty, set to an empty list
-        try:
-            self._bills = [Bill(bid[0], self.cur, self.db) for bid in self.cur.execute("SELECT id FROM bill").fetchall()]
-        except OperationalError:
-            self._bills = []
-
-    @property
-    def bills(self) -> list:
-        """
-        Property initiation for the bills
-        """
-        return self._bills
-
-    @bills.getter
-    def bills(self) -> list:
-        """
-        Getter for the bills
-        """
-        return [Bill(bid[0], self.cur, self.db) for bid in self.cur.execute(f"""
-                SELECT id FROM bill
-            """).fetchall()] or []
-
-    @bills.setter
-    def bills(self, new_bills: list) -> None:
-        """
-        Setter for the bills
-        """
-        self._bills = new_bills
-
-    def __create_table(self):
+    def create_table(self):
         """
         Creates the bills table
         """
@@ -427,16 +288,6 @@ class Bills:
         self.db.commit()
         print('Bills table created')
 
-    def __drop_table(self):
-        """
-        Drops the bills table
-        """
-        self.cur.execute("""
-            DROP TABLE IF EXISTS bill
-        """)
-        self.db.commit()
-        print('Bills table dropped')
-
     def add(self, customer_id: int = None, seating_id: int = None, created_by_staff_id: int = None, total: float = 0.0,
             covers: int = 0) -> Bill:
         """
@@ -447,9 +298,11 @@ class Bills:
         types_to_valid = []
 
         # Change None values to NULL for SQL
-        if customer_id is None:
+        if customer_id is None or customer_id == 'NULL':
             customer_id = 'NULL'
         else:
+            if not get_customer(cid=customer_id, cur=self.cur, db=self.db):
+                raise ValueError(f'Customer<{customer_id}> does not exist')
             types_to_valid.append((customer_id, int, 'customer_id'))
 
         if seating_id is None:
@@ -469,8 +322,10 @@ class Bills:
         if total < 0:
             raise ValueError(f'Total must be positive, not {total}')
 
-        if not get_customer(cid=customer_id, cur=self.cur, db=self.db):
-            raise ValueError(f'Customer<{customer_id}> does not exist')
+        # If covers is greater than 999 or less than 0, raise a ValueError
+        if covers > 999 or covers < 0:
+            raise ValueError(f'Covers must be between 0 and 999, not {covers}')
+
         # if not self.seatings.get(sid=seating_id):
         #     raise ValueError(f'Seating<{seating_id}> does not exist')
         # if not self.staff.get(sid=created_by_staff_id):
@@ -488,38 +343,5 @@ class Bills:
 
         return new_bill
 
-    def delete(self, bid):
-        """
-        Deletes a bill from the bills table
-        """
-        if not [bill for bill in self.bills if bill.bid == bid] or not row_exists('bill', bid):
-            raise ValueError(f'Bill<{bid}> does not exist')
-
-        bill_to_delete = self.get(bid=bid)
-
-        self.cur.execute(f"""
-            DELETE FROM bill WHERE id = {bid}
-        """)
-
-        self.db.commit()
-
-        self.bills = [bill for bill in self.bills if bill.bid != bid]
-        print(f'Bill<{bid}> deleted')
-
-        return bill_to_delete
-
-    def get(self, **kwargs):
-        if not kwargs:
-            return self.bills
-
-        # Extract kwargs
-        key, value = next(iter(kwargs.items()))
-        if key == 'created_between' or key == 'updated_between':
-            start, end = value
-            validate_types([(start, datetime, 'start'), (end, datetime, 'end')])
-            return [bill for bill in self.bills if start <= getattr(bill, f'{key.split('_')[0]}_at') <= end]
-        else:
-            return [bill for bill in self.bills if getattr(bill, key) == value]
-
     def __repr__(self):
-        return f'<Bills {self.bills[0:5]}...>'
+        return f'<Bills {self.rows[0:5]}...>'

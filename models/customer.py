@@ -1,11 +1,12 @@
 from datetime import datetime
 from sqlite3 import Error
 
-from facades.add_customer_to_bill import add_customer_to_bill
+from facades.bill_only import add_customer_to_bill
 from helper import row_exists, table_exists, validate_types
+from models.base import RowBase, TableBase
 
 
-class Customer:
+class Customer(RowBase):
     """
     Customer class for rows in the Customers table
 
@@ -41,18 +42,12 @@ class Customer:
 
         Only for use in the Customers class
         """
-        self.cur = cur
-        self.db = db
 
-        self._id = cid
-        try:
-            self._name, self._vip, self._created_at, self._updated_at = self.cur.execute("""
-                       SELECT name, vip, created_at, updated_at FROM customer WHERE id = ?
-                   """, (self.cid,)).fetchone()
-        except Error as error:
-            print(f'Failed to fetch Customer<{self.cid}>: {error}')
-        except TypeError:
-            raise ValueError('Invalid Customer<{self.cid}>')
+        # Set the attributes
+        attributes = ['name', 'vip']
+
+        # Call the super constructor
+        super().__init__(cid, cur, db, 'customer', attributes)
 
     @property
     def cid(self) -> int:
@@ -73,11 +68,6 @@ class Customer:
         """
         Updates the name of the Customer by ID
         """
-        # If the name is the same as the current name, do nothing
-        if new_name == self.name:
-            return
-
-
         # Validate types
         validate_types((new_name, str, 'new_name'))
 
@@ -85,23 +75,15 @@ class Customer:
         if not 1 <= len(new_name) <= 50:
             raise ValueError(f'Customer name must be between 1 and 50 characters, not {len(new_name)}')
 
-        self.cur.execute(f"""
-            UPDATE customer
-            SET 
-                name = ?,
-                updated_at = ?
-            WHERE id = ?
-        """, (new_name, datetime.now(), self.cid))
-        self.db.commit()
-
-        self._name = new_name
-        print(f'Customer<{self.cid}> name updated')
+        self.set_attribute('name', new_name)
 
     @property
     def vip(self) -> bool:
         """
         Property initiation for the VIP status
         """
+        if type(self._vip) is int:
+            return bool(self._vip)
         return self._vip
 
     @vip.setter
@@ -109,25 +91,11 @@ class Customer:
         """
         Updates the VIP status of the Customer by ID
         """
-        # If the vip status is the same as the current vip status, do nothing
-        if new_vip == self.vip:
-            return
+        print(new_vip)
+        # Validate types
+        validate_types([(new_vip, bool, 'new_vip')])
 
-        # If the vip status is not a boolean, raise a TypeError
-        if not isinstance(new_vip, bool):
-            raise TypeError(f'Customer vip status must be a boolean, not {type(new_vip)}')
-
-        self.cur.execute(f"""
-            UPDATE customer 
-            SET 
-                vip = ?, 
-                updated_at = ?
-            WHERE id = ?
-        """, (new_vip, datetime.now(), self.cid))
-        self.db.commit()
-
-        self._vip = new_vip
-        print(f'Customer<{self.cid}> VIP status updated')
+        self.set_attribute('vip', new_vip)
 
     @property
     def bills(self) -> list:
@@ -161,43 +129,6 @@ class Customer:
         add_customer_to_bill(new_bill_id, self.cid, self.cur, self.db)
         print(f'Bill<{new_bill_id}> added to Customer<{self.cid}>')
 
-    @property
-    def created_at(self) -> datetime:
-        """
-        Property initiation for the created_at datetime
-        """
-        return self.created_at
-
-    @created_at.setter
-    def created_at(self, new_created_at: datetime) -> None:
-        """
-        Assures that you can not update the created_at datetime
-        """
-        raise AttributeError("Cannot update created_at datetime")
-
-    @property
-    def updated_at(self) -> datetime:
-        """
-        Property initiation for the updated_at datetime
-        """
-        return self.updated_at
-
-    @updated_at.setter
-    def updated_at(self, new_updated_at: datetime) -> None:
-        """
-        Updates the updated_at datetime
-        """
-        self.cur.execute(f"""
-            UPDATE customer 
-            SET 
-                updated_at = ?
-            WHERE id = ?
-        """, (new_updated_at, self.cid))
-        self.db.commit()
-
-        self._updated_at = new_updated_at
-        print(f'Customer<{self.cid}> updated_at datetime updated')
-
     def __eq__(self, other):
         """
         Equality method for the Customer class
@@ -210,42 +141,17 @@ class Customer:
         """
         Representation of the Customer class
         """
-        return f'<Customer id={self.cid}, name="{self._name}", vip={self.vip}>'
+        return f'<Customer id={self.cid}, name="{self.name}", vip={self.vip}>'
 
 
-class Customers:
+class Customers(TableBase):
     """
     Customers class for the Customers table
 
-    Properties
-    ----------
-    customers : list[Customer]
-        list of all Customers in the Customers table
-
-    Methods
-    -------
-    add:
-        Adds a customer to the Customers table
-    get:
-        Returns a list of customers by name, vip status, or id
-    delete:
-        Deletes a customer from the Customers table by id
-    __get_customer_by_id:
-        Returns a customer by id
-    __get_customers_by_name:
-        Returns a list of customers by name
-    __get_customers_by_vip:
-        Returns a list of customers by vip status
     """
 
     def __init__(self, cur, db):
-        self.db = db
-        self.cur = cur
-        if not table_exists("customer"):
-            self.create_table()
-        self._customers = [Customer(row[0], cur, db) for row in self.cur.execute("""
-            SELECT id FROM customer
-        """).fetchall()]
+        super().__init__(cur, db, 'customer', Customer, 'cid')
 
     def create_table(self) -> None:
         """
@@ -263,28 +169,6 @@ class Customers:
         self.db.commit()
         print('Customer table created')
 
-    @property
-    def customers(self) -> list[Customer]:
-        """
-        Property initiation for the customers
-        """
-        return self._customers
-
-    @customers.getter
-    def customers(self) -> list[Customer]:
-        """
-        Returns the customers in table
-        """
-        return [Customer(row[0], self.cur, self.db) for row in self.cur.execute("""
-            SELECT id FROM customer
-        """).fetchall()]
-
-    @customers.setter
-    def customers(self, new_customers: list[Customer]) -> None:
-        """
-        Updates the customers in table
-        """
-        self._customers = new_customers
 
     def add(self, name: str, vip: bool):
         """
@@ -297,47 +181,6 @@ class Customers:
         new_customer = Customer(cid, self.cur, self.db)
 
         return new_customer
-    # customers.get(name='John')
-    def get(self, **kwargs) -> list[Customer] | Customer:
-
-        if not kwargs:
-            return self.customers
-
-        # Extract kwargs
-        key, value = next(iter(kwargs.items()))
-        return [customer for customer in self.customers if getattr(customer, key) == value]
-
-    def delete(self, cid: int):
-        """
-        Deletes a customer from the Customers table by id
-        :param cid: id of the customer to delete
-        """
-        if not [c for c in self.customers if c.cid == cid] or not row_exists("customer", cid):
-            raise ValueError(f'Customer<{cid}> does not exist')
-
-        customer_to_delete = self.get(cid=cid)
-
-        self.cur.execute(f"""
-            DELETE FROM customer WHERE id = {cid}
-        """)
-
-        self.db.commit()
-
-        self.customers = [c for c in self.customers if c.cid != cid]
-        print(f'Customer<{cid}> deleted')
-
-        return customer_to_delete[0]
-
-    def clear(self):
-        """
-        Clears the Customers table
-        """
-        self.cur.execute("""
-            DELETE FROM customer
-        """)
-        self.db.commit()
-        self.customers = []
-        print('Customer table cleared')
 
     def __repr__(self):
-        return f'<Customers customers={self.customers[0:5]}>'
+        return f'<Customers customers={self.rows[0:5]}...>'

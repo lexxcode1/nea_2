@@ -34,6 +34,11 @@ def row_exists(table_name: str, row_id: int) -> bool:
 
 
 def valid_variable(var):
+    """
+    Check if a variable is in the correct format
+    :param var: tuple: Variable to check
+    :return: bool: True if the variable is in the correct format, False otherwise
+    """
     return isinstance(var, tuple) and len(var) is 3 and isinstance(var[2], str)
 
 
@@ -61,3 +66,14 @@ def validate_types(variables: list[tuple] | tuple):
         # Check if the variable is the correct type
         if not isinstance(var, var_type):
             raise TypeError(f'{var_name} must be a {var_type.__name__}, not {type(var).__name__}')
+
+
+def check_gte_0(value: int | float, name: str) -> None:
+    """
+    Check if a value is greater than or equal to 0
+    :param value: int | float: Value to check
+    :param name: str: Name of the value
+    :return: None
+    """
+    if value < 0:
+        raise ValueError(f'{name} cannot be less than 0')
