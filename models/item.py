@@ -1,7 +1,6 @@
 from sqlite3 import Connection, Cursor
 
-from base import RowBase, TableBase
-from helper import validate_types, row_exists, check_gte_0
+from .base import RowBase, TableBase
 from models.menuitem import MenuItems
 
 
@@ -9,6 +8,11 @@ class Item(RowBase):
     """
     Item class for the Item rows in the table
     """
+
+    table_name = 'item'
+    attributes = ['name', 'price', 'cost', 'vat', 'quantity', 'individual_volume', 'total_volume', 'department',
+                    'description']
+
     def __init__(self, iid: int, cur: Cursor, db: Connection) -> None:
         """
         Initialize the Item class
@@ -21,12 +25,8 @@ class Item(RowBase):
         # Set constant DEPARTMENTS
         self.DEPARTMENTS = ['drink', 'food', 'other']
 
-        # Get all the attributes of the Item
-        attributes = ['name', 'price', 'cost', 'vat', 'quantity', 'individual_volume', 'total_volume', 'department',
-                      'description']
-
         # Initialize the RowBase
-        super().__init__(iid, cur, db, 'item', attributes)
+        super().__init__(iid, cur, db)
 
         # Set up MenuItems for the link table between Item and Menu
         self.__menu_items = MenuItems(cur, db)
@@ -35,7 +35,7 @@ class Item(RowBase):
         self._menus = []
 
     @property
-    def iid(self) -> int:
+    def id(self) -> int:
         """
         Get the id of the Item
         :return: int: id of the Item
@@ -58,7 +58,7 @@ class Item(RowBase):
         :return: None
         """
         # Validate types
-        validate_types([(new_name, str, 'new_name')])
+        self.validate_types([(new_name, str, 'new_name')])
 
         # If new_name is not between 0 and 25 characters, raise ValueError
         if len(new_name) < 1 or len(new_name) > 25:
@@ -86,7 +86,7 @@ class Item(RowBase):
         new_price = float(new_price) if type(new_price) is int else new_price
 
         # Validate types
-        validate_types([(new_price, float, 'new_price')])
+        self.validate_types([(new_price, float, 'new_price')])
 
         # If new_price is less than 0, raise ValueError
         check_gte_0(new_price, 'new_price')
@@ -113,7 +113,7 @@ class Item(RowBase):
         new_cost = float(new_cost) if type(new_cost) is int else new_cost
 
         # Validate types
-        validate_types([(new_cost, float, 'new_cost')])
+        self.validate_types([(new_cost, float, 'new_cost')])
 
         # If new_cost is less than 0, raise ValueError
         check_gte_0(new_cost, 'new_cost')
@@ -140,7 +140,7 @@ class Item(RowBase):
         new_vat = float(new_vat) if type(new_vat) is int else new_vat
 
         # Validate types
-        validate_types([(new_vat, float, 'new_vat')])
+        self.validate_types([(new_vat, float, 'new_vat')])
 
         # If new_vat is less than 0, raise ValueError
         check_gte_0(new_vat, 'new_vat')
@@ -164,7 +164,7 @@ class Item(RowBase):
         :return: None
         """
         # Validate types
-        validate_types([(new_quantity, int, 'new_quantity')])
+        self.validate_types([(new_quantity, int, 'new_quantity')])
 
         # If new_quantity is less than 0, raise ValueError
         check_gte_0(new_quantity, 'new_quantity')
@@ -192,7 +192,7 @@ class Item(RowBase):
             new_individual_volume) is int else new_individual_volume
 
         # Validate types
-        validate_types([(new_individual_volume, float, 'new_individual_volume')])
+        self.validate_types([(new_individual_volume, float, 'new_individual_volume')])
 
         # If new_individual_volume is less than 0, raise ValueError
         check_gte_0(new_individual_volume, 'new_individual_volume')
@@ -219,7 +219,7 @@ class Item(RowBase):
         new_total_volume = float(new_total_volume) if type(new_total_volume) is int else new_total_volume
 
         # Validate types
-        validate_types([(new_total_volume, float, 'new_total_volume')])
+        self.validate_types([(new_total_volume, float, 'new_total_volume')])
 
         # If new_total_volume is less than 0, raise ValueError
         self.set_attribute('total_volume', new_total_volume)
@@ -240,7 +240,7 @@ class Item(RowBase):
         :return: None
         """
         # Validate types
-        validate_types([(new_department, str, 'new_department')])
+        self.validate_types([(new_department, str, 'new_department')])
 
         # If the department is not valid, raise ValueError
         if new_department.lower() not in self.DEPARTMENTS:
@@ -250,12 +250,45 @@ class Item(RowBase):
         self.set_attribute('department', new_department)
 
     @property
+    def description(self) -> str:
+        """
+        Get the description of the Item
+        :return: str: description of the Item
+        """
+        return self._description
+
+    @description.setter
+    def description(self, new_description: str) -> None:
+        """
+        Set the description of the Item
+        :param new_description: str: description of the Item
+        :return: None
+        """
+        # Validate types
+        self.validate_types([(new_description, str, 'new_description')])
+
+        # If the new description is not between 1 and 25 characters raise an error
+        if len(new_description) < 1 or len(new_description) > 25:
+            raise ValueError('new_description must be between 1 and 25 characters long')
+
+        # Set the description of the Item
+        self.set_attribute('description', new_description)
+
+    @property
     def menus(self) -> list:
         """
         Get the menus of the Item
         :return: list: menus of the Item
         """
-        return self.__menu_items.get(item_id=self.iid)
+        return self.__menu_items.get(item_id=self.id)
+
+    @property
+    def gp_percentage(self) -> float:
+        """
+        Get the gross profit percentage of the Item
+        :return: float: gross profit percentage of the Item
+        """
+        return round(((self.price - self.cost) / self.price) * 100, 2)
 
     def add_menu(self, menu_id: int) -> None:
         """
@@ -264,18 +297,18 @@ class Item(RowBase):
         :return: None
         """
         # Validate types
-        validate_types([(menu_id, int, 'menu_id')])
+        self.validate_types([(menu_id, int, 'menu_id')])
 
         # If the menu does not exist, raise ValueError
-        if not row_exists('menu', menu_id):
+        if not self.row_exists('menu', menu_id):
             raise ValueError(f'Menu<{menu_id}> does not exist')
 
         # If the menu_id is already in the menus, raise ValueError
-        if self.__menu_items.get(menu_id=menu_id, item_id=self.iid):
-            raise ValueError(f'Menu<{menu_id}> already has Item<{self.iid}>')
+        if self.__menu_items.get(menu_id=menu_id, item_id=self.id):
+            raise ValueError(f'Menu<{menu_id}> already has Item<{self.id}>')
 
         # Add the menu_id to the menus
-        self.__menu_items.add(menu_id, self.iid)
+        self.__menu_items.add(menu_id, self.id)
 
     def remove_menu(self, menu_id: int) -> None:
         """
@@ -284,34 +317,26 @@ class Item(RowBase):
         :return: None
         """
         # Validate types
-        validate_types([(menu_id, int, 'menu_id')])
+        self.validate_types([(menu_id, int, 'menu_id')])
 
         # If the menu does not exist, raise ValueError
-        if not row_exists('menu', menu_id):
+        if not self.row_exists('menu', menu_id):
             raise ValueError(f'Menu<{menu_id}> does not exist')
 
         # If the menu_id is not in the menus, return
-        menu_item = self.__menu_items.get(menu_id=menu_id, item_id=self.iid)
+        menu_item = self.__menu_items.get(menu_id=menu_id, item_id=self.id)
         if not menu_item:
             return
 
         # Remove the menu_id from the menus
-        self.__menu_items.delete(menu_item.mid)
-
-    def __eq__(self, other):
-        """
-        Check if two Items are equal
-        :param other: Item: other Item to compare
-        :return: bool: True if the Items are equal, False otherwise
-        """
-        return self.iid == other.iid
+        self.__menu_items.delete(menu_item.id)
 
     def __repr__(self):
         """
         String representation of the Item
         :return: str: string representation of the Item
         """
-        return f'<Item id={self.iid}, name={self.name}, price={self.price}, vat={self.vat}, quantity={self.quantity}, ' \
+        return f'<Item id={self.id}, name={self.name}, price={self.price}, vat={self.vat}, quantity={self.quantity}, ' \
                f'individual_volume={self.individual_volume}, total_volume={self.total_volume}>'
 
 
@@ -319,6 +344,7 @@ class Items(TableBase):
     """
     Items class for the Item table in the database
     """
+
     def create_table(self):
         """
         Create the Items table
@@ -335,7 +361,9 @@ class Items(TableBase):
                 vat REAL DEFAULT 20.0,
                 quantity INTEGER,
                 individual_volume REAL DEFAULT 0.0,
-                total_volume REAL DEFAULT 0.0
+                total_volume REAL DEFAULT 0.0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
             ) 
         ''')
 
@@ -352,26 +380,34 @@ class Items(TableBase):
         self.DEPARTMENTS = ['drink', 'food', 'other']
 
         # Initialize the TableBase
-        super().__init__(cur, db, 'item', Item, 'iid')
+        super().__init__(cur, db, 'item', Item)
 
-    def add(self, name: str, price: float, vat: float, quantity: int, individual_volume: float,
-            total_volume: float, department: str, description: str) -> Item:
+    def add(self, name: str, price: float, cost: float, vat: float, quantity: int, individual_volume: int,
+            total_volume: int, department: str, description: str) -> Item:
         """
         Add a new Item to the database
         :param name: str: name of the Item
         :param price: float: price of the Item
+        :param cost: float: cost of the Item
         :param vat: float: vat of the Item
         :param quantity: int: quantity of the Item
-        :param individual_volume: float: individual_volume of the Item
-        :param total_volume: float: total_volume of the Item
+        :param individual_volume: int: individual_volume of the Item
+        :param total_volume: int: total_volume of the Item
         :param department: str: department of the Item
         :param description: str: description of the Item
         :return: Item: new Item
         """
+
+        from helper import check_gte_0
+
+        # Make price and cost floats
+        price = float(price) if type(price) is int else price
+        cost = float(cost) if type(cost) is int else cost
+
         # Validate inputs
-        validate_types([(name, str, 'name'), (price, float, 'price'), (vat, float, 'vat'),
-                        (quantity, int, 'quantity'), (individual_volume, float, 'individual_volume'),
-                        (total_volume, float, 'total_volume'), (department, str, 'department'),
+        self.validate_types([(name, str, 'name'), (price, float, 'price'), (cost, float, 'cost'), (vat, float, 'vat'),
+                        (quantity, int, 'quantity'), (individual_volume, int, 'individual_volume'),
+                        (total_volume, int, 'total_volume'), (department, str, 'department'),
                         (description, str, 'description')])
 
         # If the department is not valid, raise ValueError
@@ -386,14 +422,14 @@ class Items(TableBase):
                            (individual_volume, 'individual_volume'),
                            (total_volume, 'total_volume')]
 
-        for value, name in non_zero_values:
-            check_gte_0(value, name)
+        for value, var_name in non_zero_values:
+            check_gte_0(value, var_name)
 
         # Add the item to the Items table
         self.cur.execute('''
-            INSERT INTO item (name, price, vat, quantity, individual_volume, total_volume, department, description)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (name, price, vat, quantity, individual_volume, total_volume, department, description))
+            INSERT INTO item (name, price, cost, vat, quantity, individual_volume, total_volume, department, description)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (name, price, cost, vat, quantity, individual_volume, total_volume, department, description))
 
         self.db.commit()
         print(f'Item<{name}> added')

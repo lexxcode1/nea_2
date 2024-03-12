@@ -1,0 +1,211 @@
+Department,Name,Size,Units in size,Cost price
+Gin,Haselbury Grapefruit *,bot,28,£22.00
+Gin,Haselbury Strawberry *,bot,28,£22.00
+Gin,Gin mare,bot,28,£23.78
+Gin,Conker Gin *,bot,28,£30.58
+Gin,Monkey 47,bot,20,£31.60
+Gin,WN pink *,bot,28,
+Gin,Gordons,bot,26,£13.79
+Gin,Haselbury Slow Gin *,500ml,20,£20.00
+Gin,Edinburgh Gin Rhubarb *,500ml,20,£26.61
+Gin,Greenalls *,bot,28,£13.64
+Gin,Tanqueray  *,Bot,28,£27.93
+Gin,Tanqueray 10 *,Bot,28,£40.07
+Gin,Fifty pounds gin *,bot,28,£28.82
+Gin,Bulldog London dry *,bot,28,£22.77
+Gin,Tarquins Pastis *,bot,28,£25.16
+Gin,Brockmans *,bot,28,£25.85
+,,,,
+,,,,
+Rum,Bacardi *,Bot,28,£17.98
+Rum,Diplomatico *,Bot,28,£40.08
+Rum,Kraken *,Bot,28,£23.98
+Rum,Malibu *,Bot,28,£15.58
+Rum,Mount Gay *,Bot,28,£20.14
+Rum,Koko Kanu *,bot,28,£17.31
+Rum,Goslings *,bot,28,£19.43
+Rum,Rumbullion *,bot,28,£31.48
+Rum,Southern Comfort *,Bot,28,£23.98
+Rum,Captain Morgan Dark *,bot,28,£19.60
+Rum,Dead mans fingers *,bot,28,£16.49
+Rum,Haselbury Rum *,bot,28,£18.50
+,,,,
+,,,,
+Brandy,H by Hine VSOP Cognac *,Bot,28,£34.57
+Brandy,Maxime Trijol cognac *,bot,28,£59.43
+Brandy,Famile Dupont Calvados *,bot,28,£56.25
+Brandy,Castarede *,bot,28,£54.32
+Brandy,Courv vs,bot,28,£65.45
+Brandy,Hennesy,bot,28,£65.45
+Brandy,Henry de Querville (calv)*,bot,28,£36.00
+Brandy,Calvados Berneroy *,bot,28,£34.50
+Brandy,Somerset Cider 10 yr *,bot,28,£37.14
+,,,,
+,,,,
+Vodka,Black cow *,bot,28,£25.18
+Vodka,Black cow xmas *,500ml,20,£21.83
+Vodka,Black cow Negroni *,500ml,20,£31.87
+Vodka,Grey Goose  *,bot,28,
+Vodka,Liberty  *,bot,28,£31.99
+Vodka,Stoli,bot,28,£17.00
+Vodka,Black cow strawberry *,bot,28,£31.87
+,,,,
+Liquer,Lemoncello *,bot,28,£14.00
+Liquer,Amaretto Saliza  *,Bot,28,£25.92
+Liquer,Disaronno Amaretto *,Bot,28,£20.98
+Liquer,Amarula *,bot,28,£17.87
+Liquer,Aperol *,bot,14,£13.78
+Liquer,Archers *,bot,28,
+Liquer,Baileys *,Bot,14,£16.78
+Liquer,Briotett *,bot,28,£20.82
+Liquer,Campari *,Bot,14,£19.18
+Liquer,Cazcabel blanco tequila *,Bot,28,£24.58
+Liquer,Cazcabel coffee *,bot,28,£23.18
+Liquer,Chambord *,bot,28,£19.48
+Liquer,Chartreuse *,bot,28,£34.38
+Liquer,Cinzano rosso/blanco *,bot,28,£6.73
+Liquer,Crème D Menthe*,Bot,,£13.78
+Liquer,Cointreau*,Bot,28,£22.18
+Liquer,Cuish tequilla *,bot,28,£58.89
+Liquer,Disaronno *,bot,28,£16.57
+Liquer,DOM benadictine *,bot,28,£24.91
+Liquer,Drambuie *,bot,28,£21.23
+Liquer,Dubonnet *,bot,28,£7.81
+Liquer,Frangelico *,bot,28,£12.95
+Liquer,Grand Marnier *,50cl,20,£22.71
+Liquer,Heering Cherry Liquour *,bot,28,£20.24
+Liquer,Kahlua *,bot,28,£13.40
+Liquer,Mozart White choc *,bot,28,£13.09
+Liquer,Pisco *,Bot,,£19.95
+Liquer,Pimms *,bot,28,£12.48
+Liquer,Regal Rogue (all) *,50cl,20,£17.14
+Liquer,Sagatiba cristalina *,Bot,28,£20.36
+Liquer,Sambuca *,Bot,28,£14.90
+Liquer,St Germain elder *,Bot,28,£26.47
+Liquer,Stones Ginger wine,Bot,28,£5.79
+Liquer,Gernadine ,Bot,28,£5.79
+Liquer,Angostura Bitters,Bot,28,£5.79
+Liquer,Grapefruit Bitters,Bot,28,£5.79
+Liquer,Peychauds Bitters,Bot,28,£5.79
+,,,,
+Absinthe,Versinthe Absinthe *,Bot,28,£21.34
+,,,,
+,,,,
+Ports,Taylors tawny 10 *,Bot,28,£29.63
+Ports,Taylors vintage,Bot,28,£22.18
+Ports,Taylors LBV *,Bot,28,£16.57
+,,,,
+Non alcoholic spirits,Seedlips (all) *,bot,14,£16.48
+Non alcoholic spirits,Lyre's aperitif dry (all) *,bot,28,£21.06
+,,,,
+,,,,
+,,,,
+White wine ,Verdejo,bot,6,£7.14
+White wine ,Vinho Verde,bot,6,£8.68
+White wine ,Pfaflfl Gruner,bot,6,£9.82
+White wine ,Les Anges sauvignon ,bot,6,£8.25
+White wine ,Pinot Gris,bot,6,£13.59
+White wine ,Furleigh Bacchus Dry,bot,6,£14.34
+White wine ,The Tin Mine white,bot,6,£11.55
+White wine ,Albarino,bot,6,£15.54
+White wine ,"Gavi de Gavi ""new""",bot,6,£10.25
+White wine ,Chablis 1er Cru,bot,6,£29.22
+White wine ,La Voile,bot,6,£29.22
+White wine ,Rioja Blanco,bot,6,£29.22
+White wine ,Corryton Chardonnay,bot,6,£29.22
+White wine ,Amigo,bot,6,£29.22
+White wine ,Chameleon Sauvignon,bot,6,£29.22
+White wine ,Loureiro Vinho Verde,bot,6,£29.22
+,,,,
+,,,,
+Sparkling wine,Prosecco Il Prosecco,bot,1,£11.82
+Sparkling wine,Furleigh Cuvee ,bot,1,£24.06
+Sparkling wine,Billecart-Salmon,bot,1,£40.24
+Sparkling wine,Laborie Rose,bot,1,£40.24
+Sparkling wine,Laborie Blanc,bot,1,£40.24
+Sparkling wine,Bride Valley,bot,1,£40.24
+Sparkling wine,Krug garden Cuvee,bot,1,£40.24
+Sparkling wine,Baron de Marck,bot,1,£40.24
+Sparkling wine,Blanc de Blances,bot,1,£40.24
+Sparkling wine,Cuvee Royale,bot,1,£40.24
+Sparkling wine,Previata (Prosecco),bot,1,£0.00
+,,,,
+Rose wine,Casal Monteiro Rose,bot,1,£7.04
+Rose wine,La Voile Rose,bot,1,£8.74
+Rose wine,Furleigh Sea Pink,bot,1,£7.95
+Rose wine,Rosado Rioja,bot,1,£11.11
+Rose wine,Maisom Castel Provence,bot,1,£11.11
+,,,,
+,,,,
+Red wine,Sangiovese,Bot,1,£6.98
+Red wine,Cote du rhone,Bot,1,£8.88
+Red wine,Forma de arte,Bot,1,£9.87
+Red wine,Gouguenheim Malbec,Bot,1,£9.46
+Red wine,Rina Russo Frappato,Bot,1,£10.24
+Red wine,Jordan Black Magic Merlot,Bot,1,£14.28
+Red wine,The Tin Mine Red,Bot,1,£11.55
+Red wine,Ramon Bilbao Rioja,bot,1,£16.63
+Red wine,Priorat,Bot,1,£11.98
+Red wine,Pinot Noir,Bot,1,£17.43
+Red wine,Thelma Cab Sav,Bot,1,£17.21
+Red wine,Bride Valley Pinot Noir,Bot,1,£17.21
+Red wine,Barolo,Bot,1,£17.21
+Red wine,Rara Neagra,Bot,1,£17.21
+,,,,
+,,,,
+,,,,
+Draught Beer,Korev *,30ltr,52,£72.28
+Draught Beer,Monteray*,30ltr,52,£82.77
+Draught Beer,Asahi,50ltr,88,£198.41
+,,,,
+Cider,Isaacs Cider Calculus *,bot,12,£24.00
+Cider,Isaacs Cider Refraction *,bot,12,£24.00
+Bottled beer,Dorset gold*,bot,12,£19.91
+Bottled beer,Dorset 200*,bot,12,£19.93
+Bottled beer,Peroni GF *,bot,24,£35.98
+Bottled beer,Guiness Cans,bot,24,£35.98
+,,,,
+,,,,
+Cider,Sandfords Devon Blush *,bot,12,£19.49
+Cider,Sandfords Devon Red *,bot,12,£21.58
+Cider,Sandfords Devon Mist *,bot,12,£21.58
+Cider,Sandfords Devon Cherry *,bot,12,£21.58
+,,,,
+Non alcohol,Adnams GhostShip low ABV*,bot,8,£11.99
+Non alcohol,Sheppys low ABV *,bot,12,£15.99
+Non alcohol,Peroni Alcohol free *,bot,24,£22.78
+Non alcohol,Resiling Alcohol free,bot,6,£4.83
+,,,,
+,,,,
+,,,,
+Soft drinks,Cordials,1ltr,480,£30.50
+Soft drinks,Fruit Juice ltr,4x8,32,£16.47
+Soft drinks,Appletiser,bot,24,£23.40
+Soft drinks,Fevertree all others,bot,24,£17.98
+Soft drinks,Fevertree soda & light,bot,24,£16.78
+Soft drinks,Palmers Ginger Beer,bot,12,£18.00
+Soft drinks,Coke/ diet,bot,24,£15.48
+Soft drinks,Water Large,bot,12,£12.51
+Soft drinks,Water small,bot,24,£15.32
+Soft drinks,Tarka Sparkling Water 330ml,Bot,24,£9.58
+Soft drinks,Tarka Sparkling Water 750ml,Bot,12,£8.38
+Soft drinks,Kombucha,bot,24,£38.07
+Soft drinks,Elderflower presse,BOT,24,£19.78
+Soft drinks,Elderflower coridal,20x6,120,£17.92
+Soft drinks,Cawston press kids,bot,18,£11.76
+Soft drinks,Frobishers,bot,24,£23.38
+Soft drinks,SCHW Tomato Juice,Bot,24,£10.78
+Soft drinks,Healeys apple,bot,24,£12.89
+,,,,
+,,,,
+Desert wine,Tokaji,bot,6,£14.92
+Desert wine,Sauternes,bot,6,£10.98
+Desert wine,Monbazillac,bot,6,£10.49
+Desert wine,Casas Del Bosque Noble LH,bot,6,£11.23
+Desert wine,Della Valpolicella,bot,6,£15.23
+,,,,
+Sherry,Grahams White Port *,bot,28,£21.24
+Sherry,Haveys Fino *,bot,28,£10.51
+Sherry,Harveys amontillado med,bot,28,£11.39
+Sherry,Harveys bristol cream *,bot,28,£11.65
+Sherry,Pedro Jiminez *,bot,28,£14.65

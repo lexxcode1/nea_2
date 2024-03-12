@@ -1,17 +1,16 @@
 from sqlite3 import Cursor, Connection
 
-from helper import validate_types, row_exists
 from models.base import RowBase, TableBase
 from models.menuitem import MenuItems, MenuItem
 
 
 class Menu(RowBase):
+    attributes = ['name', 'active', 'max_size']
+    table_name = 'menu'
 
-    def __init__(self, mid: int, cur: Cursor, db: Connection) -> None:
+    def __init__(self, menu_id: int, cur: Cursor, db: Connection) -> None:
 
-        # Get all the attributes of the Menu
-        attributes = ['name', 'active', 'max_size']
-        super().__init__(mid, cur, db, 'menu', attributes)
+        super().__init__(menu_id, cur, db)
 
         # Initialize the MenuItems
         self.__menu_items = MenuItems(self.cur, self.db)
@@ -20,7 +19,7 @@ class Menu(RowBase):
         self._items = []
 
     @property
-    def mid(self) -> int:
+    def id(self) -> int:
         """
         Get the id of the Menu
 
@@ -46,7 +45,7 @@ class Menu(RowBase):
         :return None:
         """
         # Validate types
-        validate_types([(new_name, str, 'new_name')])
+        self.validate_types([(new_name, str, 'new_name')])
 
         # If new_name is the same as the current name, return
         if new_name == self._name:
@@ -78,7 +77,7 @@ class Menu(RowBase):
         :return None:
         """
         # Validate types
-        validate_types([(new_active, bool, 'new_active')])
+        self.validate_types([(new_active, bool, 'new_active')])
 
         self.set_attribute('active', new_active)
 
@@ -100,7 +99,7 @@ class Menu(RowBase):
         :return None:
         """
         # Validate types
-        validate_types([(new_max_size, int, 'new_max_size')])
+        self.validate_types([(new_max_size, int, 'new_max_size')])
 
         # If new_max_size is less than 1, raise ValueError
         if new_max_size < 0:
@@ -117,7 +116,7 @@ class Menu(RowBase):
         """
         # get how many item are in associated with the menu
         # TODO implement when items & Menuitem are implemented
-        pass
+        return 1
 
     @current_size.setter
     def current_size(self, new_current_size: int) -> None:
@@ -139,7 +138,7 @@ class Menu(RowBase):
 
         :return list : items associated with the Menu
         """
-        return self.__menu_items.get(menu_id=self.mid)
+        return self.__menu_items.get(menu_id=self.id)
 
     def add_item(self, item_id: int) -> MenuItem | None:
         """
@@ -149,22 +148,23 @@ class Menu(RowBase):
         :return None:
         """
         # Validate inputs
-        validate_types([(item_id, int, 'item_id')])
+        self.validate_types([(item_id, int, 'item_id')])
 
         # If item_id is not a valid item, raise ValueError
-        if not row_exists('item', item_id):
+        if not self.row_exists('item', item_id):
             raise ValueError(f'Item<{item_id}> does not exist')
 
         # If there is already a MenuItem with the same item_id, return
-        if self.__menu_items.get(item_id=item_id, menu_id=self.mid):
+        if len(self.__menu_items.get(True, item_id=item_id, menu_id=self.id)) > 0:
+            print('fm', self.__menu_items.get(True, item_id=item_id, menu_id=self.id))
             return
 
         # If the menu is full, raise ValueError
         if self.full:
-            raise ValueError(f'Menu<{self.mid}> is full')
+            raise ValueError(f'Menu<{self.id}> is full')
 
         # Add the item to the Menu
-        return self.__menu_items.add(self.mid, item_id)
+        return self.__menu_items.add(self.id, item_id)
 
     def remove_item(self, item_id: int) -> None:
         """
@@ -174,33 +174,34 @@ class Menu(RowBase):
         :return None:
         """
         # Validate inputs
-        validate_types([(item_id, int, 'item_id')])
+        self.validate_types([(item_id, int, 'item_id')])
 
         # If item_id is not a valid item, raise ValueError
-        if not row_exists('item', item_id):
+        if not self.row_exists('item', item_id):
             raise ValueError(f'Item<{item_id}> does not exist')
 
         # Get the MenuItem with the item_id
-        menu_item = self.__menu_items.get(item_id=item_id, menu_id=self.mid)
+        menu_item = self.__menu_items.get(item_id=item_id, menu_id=self.id)
 
         # If there is no MenuItem with the item_id, return
         if not menu_item: return
 
         # Remove the item from the Menu
-        self.__menu_items.delete(menu_item.mid)
+        self.__menu_items.delete(menu_item.id)
 
         return menu_item
 
-    def __eq__(self, other):
-        return self.mid == other.mid and self.name == other.name and self.active == other.active and self.max_size == other.max_size
+    def __hash__(self):
+        return hash(self.id)
+
 
     def __repr__(self):
-        return f'<Menu id={self.mid}, name={self.name}, active={self.active}, max_size={self.max_size}, current_size={self.current_size}, full={self.full}>'
+        return f'<Menu id={self.id}, name={self.name}, active={self.active}, max_size={self.max_size}, current_size={self.current_size}, full={self.full}>'
 
 
 class Menus(TableBase):
     def __init__(self, cur: Cursor, db: Connection):
-        super().__init__(cur, db, 'menu', Menu, 'mid')
+        super().__init__(cur, db, 'menu', Menu)
 
     def create_table(self):
         self.cur.execute('''
@@ -226,7 +227,7 @@ class Menus(TableBase):
         :return Menu: new Menu object
         """
         # Validate inputs
-        validate_types([(name, str, 'name'), (active, bool, 'active'), (max_size, int, 'max_size')])
+        self.validate_types([(name, str, 'name'), (active, bool, 'active'), (max_size, int, 'max_size')])
 
         # Insert the new Menu into the database
         self.cur.execute('''

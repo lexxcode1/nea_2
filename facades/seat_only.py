@@ -1,4 +1,4 @@
-import models.seating as S
+import models.seat as S
 
 """
 This file is used to avoid a circular import dependency between other models and models.seat

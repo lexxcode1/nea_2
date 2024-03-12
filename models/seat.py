@@ -2,7 +2,6 @@ from datetime import datetime
 from sqlite3 import Cursor, Connection
 
 from facades.bill_only import get_all_bills_by_seat
-from helper import validate_types
 from models.base import RowBase, TableBase
 
 
@@ -10,17 +9,18 @@ class Seat(RowBase):
     """
     Seat class for the Seating table in the database
     """
+    attributes = ['name', 'max_size', 'flagged', 'status', 'type']
+    table_name = 'seating'
 
-    def __init__(self, sid: int, cur: Cursor, db: Connection) -> None:
+    def __init__(self, seat_id: int, cur: Cursor, db: Connection) -> None:
         self._bills = []
+        self.STATUSES = ['clear', 'reserved', 'okay', 'mains', 'desserts', 'bill', 'paid', 'check', 'empty']
+        self.TYPES = ['table', 'booth', 'bar', 'high-table']
 
-        # Get all the attributes of the Seat
-        attributes = ['name', 'max_size', 'flagged', 'status', 'type']
-
-        super().__init__(sid, cur, db, 'seating', attributes)
+        super().__init__(seat_id, cur, db)
 
     @property
-    def sid(self) -> int:
+    def id(self) -> int:
         """
         Get the id of the Seat
 
@@ -46,7 +46,7 @@ class Seat(RowBase):
         :return None:
         """
         # Validate types
-        validate_types([(new_name, str, 'new_name')])
+        self.validate_types([(new_name, str, 'new_name')])
 
         # If new_name is the same as the current name, return
         if new_name == self._name:
@@ -76,7 +76,7 @@ class Seat(RowBase):
         :return None:
         """
         # Validate types
-        validate_types([(new_max_size, int, 'new_max_size')])
+        self.validate_types([(new_max_size, int, 'new_max_size')])
 
         # If new_max_size is less than 1, raise ValueError
         if new_max_size < 0:
@@ -102,7 +102,7 @@ class Seat(RowBase):
         :return None:
         """
         # Validate types
-        validate_types([(new_flagged, bool, 'new_flagged')])
+        self.validate_types([(new_flagged, bool, 'new_flagged')])
 
         self.set_attribute('flagged', new_flagged)
 
@@ -123,9 +123,9 @@ class Seat(RowBase):
         :return:
         """
         # Validate types
-        validate_types([(new_status, str, 'new_status')])
+        self.validate_types([(new_status, str, 'new_status')])
 
-        if new_status not in ['clear', 'reserved', 'okay', 'mains', 'desserts', 'bill', 'paid', 'check']:
+        if new_status not in self.STATUSES:
             raise ValueError('new_status must be one of clear, reserved, okay, mains, desserts, bill, paid, check')
 
         self.set_attribute('status', new_status)
@@ -147,9 +147,9 @@ class Seat(RowBase):
         :return:
         """
         # Validate types
-        validate_types([(new_type, str, 'new_type')])
+        self.validate_types([(new_type, str, 'new_type')])
 
-        if new_type not in ['table', 'booth', 'bar', 'high-table']:
+        if new_type not in self.TYPES:
             raise ValueError('new_type must be one of table, booth, bar, high-table')
 
         self.set_attribute('type', new_type)
@@ -161,7 +161,7 @@ class Seat(RowBase):
 
         :return list : bills of the Seat
         """
-        return get_all_bills_by_seat(self.sid, self.cur, self.db)
+        return get_all_bills_by_seat(self.id, self.cur, self.db)
 
     @bills.getter
     def bills(self) -> list:
@@ -170,7 +170,7 @@ class Seat(RowBase):
 
         :return list : bills of the Seat
         """
-        self._bills = get_all_bills_by_seat(self.sid, self.cur, self.db)
+        self._bills = get_all_bills_by_seat(self.id, self.cur, self.db)
         return self._bills
 
     @property
@@ -221,7 +221,7 @@ class Seat(RowBase):
 
 
 class Seats(TableBase):
-    def __create_table(self):
+    def create_table(self):
         # Create the table
         self.cur.execute('''
             CREATE TABLE seating (
@@ -238,7 +238,11 @@ class Seats(TableBase):
         ''')
 
     def __init__(self, cur: Cursor, db: Connection):
-        super().__init__(cur, db, 'seating', Seat, 'sid')
+
+        self.STATUSES = ['clear', 'reserved', 'okay', 'mains', 'desserts', 'bill', 'paid', 'check', 'empty']
+
+        self.TYPES = ['table', 'booth', 'bar', 'high-table']
+        super().__init__(cur, db, 'seating', Seat)
 
     def add(self, name: str, max_size: int, flagged: bool, status: str, seat_type: str) -> Seat:
         """
@@ -253,8 +257,8 @@ class Seats(TableBase):
         """
 
         # Validate types
-        validate_types([(name, str, 'name'), (max_size, int, 'max_size'), (flagged, bool, 'flagged'),
-                        (status, str, 'status'), (seat_type, str, 'type_')])
+        self.validate_types([(name, str, 'name'), (max_size, int, 'max_size'), (flagged, bool, 'flagged'),
+                        (status, str, 'status'), (seat_type, str, 'seat_type')])
 
         # If name is less than 1 character, raise ValueError
         if len(name) < 1 or len(name) > 25:
@@ -264,11 +268,11 @@ class Seats(TableBase):
         if max_size < 0:
             raise ValueError('max_size must be greater than or equal to 0')
 
-        if status not in ['clear', 'reserved', 'okay', 'mains', 'desserts', 'bill', 'paid', 'check']:
+        if status not in self.STATUSES:
             raise ValueError('status must be one of clear, reserved, okay, mains, desserts, bill, paid, check')
 
-        if seat_type not in ['table', 'booth', 'bar', 'high-table']:
-            raise ValueError('type must be one of table, booth, bar, high-table')
+        if seat_type not in self.TYPES:
+            raise ValueError(f'type must be one of {', '.join(self.TYPES)}')
 
         # Insert the new Seat into the database
         new_id = self.cur.execute(f'''

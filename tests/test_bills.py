@@ -25,10 +25,10 @@ class TestBills(unittest.TestCase):
         random_customer = fake.random_element(self.customers.get())
 
         self.bills = Bills(self.cur, self.db)
-        self.bill = self.bills.add(customer_id=random_customer.cid, seating_id=1, created_by_staff_id=1, total=100.0, covers=5)
+        self.bill = self.bills.add(customer_id=random_customer.id, seating_id=1, created_by_staff_id=1, total=100.0, covers=5)
 
     def test_bill_creation_returns_correct_bill(self):
-        retrieved_bill = self.bills.get(bid=self.bill.bid)
+        retrieved_bill = self.bills.get(bid=self.bill.id)
         self.assertEqual(retrieved_bill[0], self.bill)
 
     def test_bill_creation_with_non_existent_customer_id_raises_error(self):
@@ -40,8 +40,8 @@ class TestBills(unittest.TestCase):
             self.bills.add(customer_id=1, seating_id=1, created_by_staff_id=1, total=-100.0, covers=5)
 
     def test_bill_deletion_removes_bill(self):
-        self.bills.delete(self.bill.bid)
-        self.assertEqual(self.bills.get(bid=self.bill.bid), [])
+        self.bills.delete(self.bill.id)
+        self.assertEqual(self.bills.get(bid=self.bill.id), [])
 
     def test_bill_deletion_with_non_existent_id_raises_error(self):
         with self.assertRaises(ValueError):
@@ -122,15 +122,15 @@ class TestBills(unittest.TestCase):
         self.assertEqual(self.bills.get(bid=9999), [])
 
     def test_get_bill_with_valid_id_returns_array(self):
-        retrieved_bill = self.bills.get(bid=self.bill.bid)
+        retrieved_bill = self.bills.get(bid=self.bill.id)
         self.assertIsInstance(retrieved_bill, list)
 
     def test_get_bill_with_valid_id_returns_correct_bill(self):
-        retrieved_bill = self.bills.get(bid=self.bill.bid)
+        retrieved_bill = self.bills.get(bid=self.bill.id)
         self.assertEqual(retrieved_bill[0], self.bill)
 
     def test_get_bill_with_valid_id_returns_correct_length_array(self):
-        retrieved_bill = self.bills.get(bid=self.bill.bid)
+        retrieved_bill = self.bills.get(bid=self.bill.id)
         self.assertEqual(len(retrieved_bill), 1)
 
     def test_get_bill_with_valid_customer_id_includes_correct_bill(self):

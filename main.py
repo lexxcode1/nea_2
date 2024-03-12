@@ -1,20 +1,26 @@
-# This is a sample Python script.
-from connector import connect
+from datetime import datetime
 
+from connector import connect
+from handlers.pre_sim_prep import simulation_prep
+from handlers.simulation import simulate_day
+from models import Shifts, Actions, Bills
+
+# Connect to the database
 db = connect()
 cur = db.cursor()
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
-
-
-# Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    cur.execute("SELECT * FROM customer")
-    print(cur.fetchall())
+    # Fill out tables pre simulation
+    roles, staff_members, items, menus, seats, customers = simulation_prep()
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    # Initiate the shifts table
+    shifts = Shifts(cur, db)
+
+    # Initiate the actions table
+    actions = Actions(cur, db)
+
+    # Initiate the bills table
+    bills = Bills(cur, db)
+
+    # Simulate one day
+    simulate_day(staff_members, customers, actions, bills, roles, date=datetime.now())

@@ -228,7 +228,7 @@ class TestCustomer(unittest.TestCase):
         """
         Tests that getting a customer's id returns the correct id
         """
-        self.assertEqual(self.customer.cid, self.customer._id)
+        self.assertEqual(self.customer.id, self.customer._id)
 
     def test_getting_id_of_nonexistent_customer_raises_value_error(self):
         """
@@ -236,7 +236,7 @@ class TestCustomer(unittest.TestCase):
         """
         with self.assertRaises(ValueError):
             nonexistent_customer = Customer(9999, self.cur, self.db)  # Assuming this id does not exist
-            nonexistent_customer.cid
+            nonexistent_customer.id
 
     # TODO Fix when bills are implemented
     # def test_getting_bills_of_existing_customer_returns_correct_bills(self):

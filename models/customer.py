@@ -1,40 +1,13 @@
-from datetime import datetime
-from sqlite3 import Error
-
 from facades.bill_only import add_customer_to_bill
-from helper import row_exists, table_exists, validate_types
 from models.base import RowBase, TableBase
 
 
 class Customer(RowBase):
     """
     Customer class for rows in the Customers table
-
-    Properties
-    ----------
-    id : int
-        unique id for each Customer
-    name : str
-        name of the Customer
-    bills : list[Bill]
-        bills associated with the Customer with a one-to-many relationship
-    vip : bool
-        whether the Customer is VIP or not
-    created_at : datetime
-        datetime when the Customer was created
-    updated_at : datetime
-        datetime when the Customer was last updated
-
-    Methods
-    -------
-    name.setter:
-        Updates the name of the Customer by ID
-    vip.setter:
-        Updates the VIP status of the Customer by ID
-    bills.getter:
-        Returns the bills associated with the Customer by ID
-
     """
+    attributes = ['name', 'vip']
+    table_name = 'customer'
 
     def __init__(self, cid: int, cur, db) -> None:
         """
@@ -43,14 +16,11 @@ class Customer(RowBase):
         Only for use in the Customers class
         """
 
-        # Set the attributes
-        attributes = ['name', 'vip']
-
         # Call the super constructor
-        super().__init__(cid, cur, db, 'customer', attributes)
+        super().__init__(cid, cur, db)
 
     @property
-    def cid(self) -> int:
+    def id(self) -> int:
         """
         Property initiation for the id
         """
@@ -69,7 +39,7 @@ class Customer(RowBase):
         Updates the name of the Customer by ID
         """
         # Validate types
-        validate_types((new_name, str, 'new_name'))
+        self.validate_types((new_name, str, 'new_name'))
 
         # If the name is not between 1 and 20 characters, raise a ValueError
         if not 1 <= len(new_name) <= 50:
@@ -93,7 +63,7 @@ class Customer(RowBase):
         """
         print(new_vip)
         # Validate types
-        validate_types([(new_vip, bool, 'new_vip')])
+        self.validate_types([(new_vip, bool, 'new_vip')])
 
         self.set_attribute('vip', new_vip)
 
@@ -103,7 +73,7 @@ class Customer(RowBase):
         Returns the bills associated with the Customer by ID
         """
         self.cur.execute(f"""
-               SELECT * FROM bill WHERE customer_id = {self.cid}
+               SELECT * FROM bill WHERE customer_id = {self.id}
             """)
         return self.cur.fetchall() or []
 
@@ -113,7 +83,7 @@ class Customer(RowBase):
         Returns the bills associated with the Customer by ID
         """
         self.cur.execute(f"""
-               SELECT * FROM bill WHERE customer_id = {self.cid}
+               SELECT * FROM bill WHERE customer_id = {self.id}
             """)
 
         return self.cur.fetchall() or []
@@ -123,11 +93,11 @@ class Customer(RowBase):
         Adds a bill to the Customer by ID
         """
         # If the bill does not exist, raise a ValueError
-        if not row_exists("bill", new_bill_id):
+        if not self.row_exists("bill", new_bill_id):
             raise ValueError(f'Bill<{new_bill_id}> does not exist')
 
-        add_customer_to_bill(new_bill_id, self.cid, self.cur, self.db)
-        print(f'Bill<{new_bill_id}> added to Customer<{self.cid}>')
+        add_customer_to_bill(new_bill_id, self.id, self.cur, self.db)
+        print(f'Bill<{new_bill_id}> added to Customer<{self.id}>')
 
     def __eq__(self, other):
         """
@@ -135,13 +105,13 @@ class Customer(RowBase):
         """
         # Check that other is an instance of Customer and that all attributes are equal
         return isinstance(other,
-                          Customer) and self.cid == other.cid and self.name == other.name and self.vip == other.vip
+                          Customer) and self.id == other.id and self.name == other.name and self.vip == other.vip
 
     def __repr__(self) -> str:
         """
         Representation of the Customer class
         """
-        return f'<Customer id={self.cid}, name="{self.name}", vip={self.vip}>'
+        return f'<Customer id={self.id}, name="{self.name}", vip={self.vip}>'
 
 
 class Customers(TableBase):
@@ -151,7 +121,7 @@ class Customers(TableBase):
     """
 
     def __init__(self, cur, db):
-        super().__init__(cur, db, 'customer', Customer, 'cid')
+        super().__init__(cur, db, 'customer', Customer, )
 
     def create_table(self) -> None:
         """
@@ -169,7 +139,6 @@ class Customers(TableBase):
         self.db.commit()
         print('Customer table created')
 
-
     def add(self, name: str, vip: bool):
         """
         Adds a customer to the Customers table
@@ -179,6 +148,8 @@ class Customers(TableBase):
                 INSERT INTO customer (name, vip) VALUES (?, ?)
                 """, (name, vip)).lastrowid
         new_customer = Customer(cid, self.cur, self.db)
+
+        self.db.commit()
 
         return new_customer
 
